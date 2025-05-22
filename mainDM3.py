@@ -13,7 +13,7 @@ from diffusion import Diffusion
 from model import TransformerDenoiser, DoubleCritic
 from policy import DiffusionOPT
 from UAV import Environment
-from llm_reward import llmExaminer
+
 
 def get_args():
     # Create argument parser
