@@ -151,6 +151,8 @@ def main(args=None):
     total_critic_csv  =[]
     total_energy_con_csv =[]
     total_aoi_csv =[]
+    total_actor_loss=0
+    total_critic_loss=0
     
 
 
@@ -169,6 +171,8 @@ def main(args=None):
         epsilon = math.exp(-1. * i_episode / 30)  # annealing
 
         Reward = 0
+        total_energy =0
+        total_aoi=0
         t = 0
         done = False
 
@@ -184,7 +188,12 @@ def main(args=None):
                 action = policy.select_action(state, hist_arr)
 
             # step environment
-            next_state, base_reward, done, _ = env.step(action)
+            next_state, base_reward, done, dict_element = env.step(action)
+            aoi =dict_element["AoI"]
+            total_aoi += aoi
+            energy =dict_element["Energy Consumption"]
+            total_energy +=energy
+            #print(dict_element["AoI"])
 
             # LLM‐shaped reward
             #if t % 10 == 0:
@@ -195,7 +204,7 @@ def main(args=None):
 
             next_state = np.asarray(next_state, dtype=np.float32)
             Reward += base_reward
-            print("Base Reward {}".format(base_reward))
+            #print("Base Reward {}".format(base_reward))
             #print("Next State {}".format(next_state))
             t += 1
 
@@ -208,23 +217,43 @@ def main(args=None):
             state = next_state
             total_steps += 1
 
-            # training step
-            if total_steps > policy.batch_size * 5:
-                losses = policy.learn(t)
-                # you can log losses['loss/critic'], losses['overall_loss'] here
+            if total_steps > policy.batch_size*5:
+                # print("Update")
+                # print(actor_net.get_params())
+                loss = policy.learn(t)
+                # print(actor_net.get_params())
+                critic_loss = loss.get("loss/critic")
+                actor_loss = loss.get("overall_loss")
+                if critic_loss is None :
+                  critic_loss=0
+                if  actor_loss is None:
+                  actor_loss =0
+
+                total_critic_loss += critic_loss
+                total_actor_loss += actor_loss
+                # print(loss.get("loss/critic"),loss.get("overall_loss"))
 
         print(f"Episode {i_episode}: Avg Reward per step = {Reward / t:.3f}")
+        print(f"Episode {i_episode}: Critic Loss = {total_critic_loss/t:.3f}")
+        print(f"Episode {i_episode}: Actor Loss = {total_actor_loss/t:.3f}")
+        print(f"Episode {i_episode}: AoI= {total_aoi / t:.3f}")
+        print(f"Episode {i_episode}:Energy = {total_energy[0]/ t}")
+        #print(f"Episode {i_episode}: Avg Reward per step = {Reward / t:.3f}")
         total_episode_csv.append(i_episode)
-        total_reward_csv.append(Reward)
+        total_reward_csv.append(Reward/t)
+        total_critic_csv.append(total_critic_loss/t)
+        total_actor_enegry_csv.append(total_actor_loss/t)
+        total_aoi_csv.append(total_aoi/t)
+        total_energy_con_csv.append(total_energy[0]/ t)
        
         print("-" * 80)
     data_frame = pd.DataFrame({"Episode":total_episode_csv,
                                 "Avg Reward":total_reward_csv,
                                 "Actor Loss" : total_actor_enegry_csv,
+                                "Critic Loss": total_critic_csv,
+                                "AoI":total_aoi_csv,
+                                "Energy Consumption":total_energy_con_csv
                                 })
-    data_frame.to_csv('training_log.csv',            # filename
-          index=False,           # don’t write row numbers
-          header=True,           # include column headers
-          encoding='utf-8')                             
+    data_frame.to_csv('training_log_updated.csv',index=False,header=True,encoding='utf-8')                             
 if __name__ == "__main__":
     main()
