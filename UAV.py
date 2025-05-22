@@ -116,7 +116,7 @@ class Environment:
             energy_A = np.array([500])
             energy_B = np.array([500])
             state = np.concatenate((self.current_position_A, self.current_position_B ,self.AoI , energy_A, energy_B))
-            return state, reward, self.done, {}
+            return state, reward, self.done, {"Energy Consumption" :self.avg_E, "AoI" :self.A}
 
         # 更新当前位置
         past_position_A = self.current_position_A   # 留档之前的位置，用于计算距离
@@ -231,4 +231,4 @@ class Environment:
         state = np.concatenate((self.current_position_A, self.current_position_B ,self.AoI , energy_A, energy_B))
 
         # 返回新的观察值、奖励、是否结束、额外信息（可选）
-        return state, reward, done, {}
+        return state, reward, done, {"Energy Consumption" :self.avg_E, "AoI" :self.A}
