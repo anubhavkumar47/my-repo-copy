@@ -40,7 +40,7 @@ def get_args():
     parser.add_argument(
          '--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
     parser.add_argument(
-        '--device', type=str, default='cpu')
+        '--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
     parser.add_argument('--resume-path', type=str, default=None)
     parser.add_argument('--watch', action='store_true', default=False)
     parser.add_argument('--lr-decay', action='store_true', default=False)
